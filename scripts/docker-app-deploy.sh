@@ -35,10 +35,12 @@ for i in $(seq 1 20); do
     echo "==> Health OK (docker exec)"
     # Vérification optionnelle via IP hôte (depuis la machine Docker)
     HOST_IP="$(ip route 2>/dev/null | awk '/default/ {print $3; exit}' || echo '127.0.0.1')"
-    if curl -sf "http://${HOST_IP}:${APP_PORT}/health" >/dev/null 2>&1; then
+    if curl -sf "http://127.0.0.1:${APP_PORT}/health" >/dev/null 2>&1; then
       echo "==> Application accessible : http://localhost:${APP_PORT}"
+    elif curl -sf "http://${HOST_IP}:${APP_PORT}/health" >/dev/null 2>&1; then
+      echo "==> Application accessible : http://${HOST_IP}:${APP_PORT}"
     else
-      echo "==> Application dans le conteneur OK (accès hôte : http://${HOST_IP}:${APP_PORT})"
+      echo "==> Conteneur OK — essayez http://localhost:${APP_PORT}"
     fi
     exit 0
   fi

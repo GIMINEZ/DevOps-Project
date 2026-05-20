@@ -18,6 +18,7 @@ GitHub → Jenkins (built-in)
 
 | Document | Contenu |
 |----------|---------|
+| **[DOCUMENTATION.md](DOCUMENTATION.md)** | Architecture complète, rôles des fichiers, pipeline détaillé |
 | **DEVOPS.md** | Configuration Jenkins, Ansible, dépannage |
 | Ce README | Application Flask, API, tests locaux |
 
