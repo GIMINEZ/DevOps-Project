@@ -75,23 +75,25 @@ pipeline {
                         sh "docker push ${REGISTRY}/${IMAGE_NAME}:latest"
                     }
                 }
+            }
+        }
 
-                stage('Deploy') {
-                    steps {
-                        sh '''
-                            chmod +x scripts/*.sh
-                            export IMAGE_TAG="${IMAGE_TAG}"
-                            export REGISTRY="${REGISTRY}"
-                            export IMAGE_NAME="${IMAGE_NAME}"
-                            export ANSIBLE_SSH_HOST="${ANSIBLE_SSH_HOST}"
-                            export ANSIBLE_SSH_USER="${ANSIBLE_SSH_USER}"
-                            ./scripts/run-ansible.sh deploy.yml \
-                              -e "image_tag=${IMAGE_TAG}" \
-                              -e "registry=${REGISTRY}" \
-                              -e "image_name=${IMAGE_NAME}"
-                        '''
-                    }
-                }
+        stage('Deploy') {
+            agent { label 'built-in' }
+            steps {
+                checkout scm
+                sh '''
+                    chmod +x scripts/*.sh
+                    export IMAGE_TAG="${IMAGE_TAG}"
+                    export REGISTRY="${REGISTRY}"
+                    export IMAGE_NAME="${IMAGE_NAME}"
+                    export ANSIBLE_SSH_HOST="${ANSIBLE_SSH_HOST}"
+                    export ANSIBLE_SSH_USER="${ANSIBLE_SSH_USER}"
+                    ./scripts/run-ansible.sh deploy.yml \
+                      -e "image_tag=${IMAGE_TAG}" \
+                      -e "registry=${REGISTRY}" \
+                      -e "image_name=${IMAGE_NAME}"
+                '''
             }
         }
     }

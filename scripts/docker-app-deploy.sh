@@ -11,10 +11,12 @@ JENKINS_NETWORK="${JENKINS_NETWORK:-jenkins-net}"
 
 IMAGE="${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
 
-echo "==> Déploiement ${IMAGE} → port ${APP_PORT}"
+echo "==> Déploiement ${IMAGE} → port hôte ${APP_PORT}"
 
 docker pull "${IMAGE}"
 docker rm -f "${APP_NAME}" 2>/dev/null || true
+
+docker network inspect "${JENKINS_NETWORK}" >/dev/null 2>&1 || docker network create "${JENKINS_NETWORK}"
 
 docker run -d \
   --name "${APP_NAME}" \
@@ -23,14 +25,27 @@ docker run -d \
   -p "${APP_PORT}:5000" \
   "${IMAGE}"
 
+echo "==> Attente démarrage Gunicorn..."
+sleep 5
+
+# Health check dans le conteneur (fiable depuis n'importe quel exécuteur Docker)
 for i in $(seq 1 20); do
-  if curl -sf "http://127.0.0.1:${APP_PORT}/health" >/dev/null; then
-    echo "==> Health OK — http://localhost:${APP_PORT}"
+  if docker exec "${APP_NAME}" python -c \
+    "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health')" 2>/dev/null; then
+    echo "==> Health OK (docker exec)"
+    # Vérification optionnelle via IP hôte (depuis la machine Docker)
+    HOST_IP="$(ip route 2>/dev/null | awk '/default/ {print $3; exit}' || echo '127.0.0.1')"
+    if curl -sf "http://${HOST_IP}:${APP_PORT}/health" >/dev/null 2>&1; then
+      echo "==> Application accessible : http://localhost:${APP_PORT}"
+    else
+      echo "==> Application dans le conteneur OK (accès hôte : http://${HOST_IP}:${APP_PORT})"
+    fi
     exit 0
   fi
   echo "  Attente health check (${i}/20)..."
   sleep 3
 done
 
-echo "ERROR: health check échoué sur le port ${APP_PORT}" >&2
+echo "ERROR: health check échoué" >&2
+docker logs "${APP_NAME}" 2>&1 | tail -20 >&2 || true
 exit 1

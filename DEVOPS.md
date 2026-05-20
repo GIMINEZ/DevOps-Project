@@ -128,6 +128,8 @@ docker ps | grep -E 'dynamic-agent|task-manager'
 curl http://localhost:8080/health
 ```
 
+Le stage **Deploy** s'exécute sur le master Jenkins (`built-in`) via SSH vers l'hôte, car l'agent `dynamic-agent` n'a pas les clés SSH.
+
 Réponse attendue : `{"status":"ok","service":"task-manager"}`
 
 ## Dépannage

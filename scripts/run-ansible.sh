@@ -184,6 +184,14 @@ if run_docker_playbook_local; then
   exit 0
 fi
 
+# Pas de fallback cytopia pour les playbooks gérés par scripts Docker
+case "${PLAYBOOK}" in
+  create-agent.yml|destroy-agent.yml|deploy.yml)
+    echo "ERROR: échec de ${PLAYBOOK} (SSH et Docker local)." >&2
+    exit 1
+    ;;
+esac
+
 if run_ansible_docker_image; then
   exit 0
 fi
