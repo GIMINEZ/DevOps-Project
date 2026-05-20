@@ -28,6 +28,31 @@ Jenkins post always ──► Ansible destroy-agent.yml
 
 ## Configuration Jenkins (une fois)
 
+### 0. SSH Jenkins → hôte Ansible (obligatoire)
+
+Jenkins tourne **dans un conteneur** sans `ansible-playbook`. Les playbooks s'exécutent sur l'hôte via l'utilisateur `ansible` en SSH.
+
+Sur la machine hôte (une seule fois) :
+
+```bash
+cd /home/ahmedsalem/Desktop/IRT43/Projet
+sudo bash scripts/setup-jenkins-ssh.sh
+```
+
+Vérification :
+
+```bash
+docker exec -u jenkins jenkins ssh -o BatchMode=yes ansible@172.17.0.1 "ansible-playbook --version"
+```
+
+Si l'IP gateway diffère :
+
+```bash
+ip route | awk '/default/{print $3}'   # souvent 172.17.0.1
+export SSH_HOST=172.17.0.1
+sudo bash scripts/setup-jenkins-ssh.sh
+```
+
 ### 1. Credential secret agent
 
 1. **Manage Jenkins** → **Credentials** → **System** → **Global**

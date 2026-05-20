@@ -6,7 +6,10 @@ pipeline {
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         REGISTRY = "${env.DOCKER_REGISTRY ?: 'localhost:5000'}"
         JENKINS_AGENT_NAME = 'dynamic-agent'
-        JENKINS_URL = "${env.JENKINS_URL ?: 'http://localhost:8081'}"
+        // API Jenkins : depuis le conteneur jenkins → port interne 8080
+        JENKINS_URL = "${env.JENKINS_URL ?: 'http://127.0.0.1:8080'}"
+        ANSIBLE_SSH_HOST = "${env.ANSIBLE_SSH_HOST ?: '172.17.0.1'}"
+        ANSIBLE_SSH_USER = "${env.ANSIBLE_SSH_USER ?: 'ansible'}"
         // Définir JENKINS_AGENT_SECRET dans Jenkins → Job → Environment (recommandé)
         // ou créer une credential Secret text id: jenkins-agent-secret
         JENKINS_AGENT_SECRET = "${env.JENKINS_AGENT_SECRET ?: 'a5a0e3edd653bfab20ec5c1ec8baa16dc94b34a962918c33ce6f439f9cbbdfd6'}"
@@ -18,7 +21,10 @@ pipeline {
             steps {
                 checkout scm
                 sh '''
-                    chmod +x scripts/run-ansible.sh scripts/wait-for-agent.sh
+                    chmod +x scripts/*.sh
+                    export JENKINS_AGENT_SECRET="${JENKINS_AGENT_SECRET}"
+                    export ANSIBLE_SSH_HOST="${ANSIBLE_SSH_HOST}"
+                    export ANSIBLE_SSH_USER="${ANSIBLE_SSH_USER}"
                     ./scripts/run-ansible.sh destroy-agent.yml || true
                     ./scripts/run-ansible.sh create-agent.yml \
                       -e "jenkins_agent_secret=${JENKINS_AGENT_SECRET}"
@@ -64,7 +70,12 @@ pipeline {
                 stage('Deploy') {
                     steps {
                         sh '''
-                            chmod +x scripts/run-ansible.sh
+                            chmod +x scripts/*.sh
+                            export IMAGE_TAG="${IMAGE_TAG}"
+                            export REGISTRY="${REGISTRY}"
+                            export IMAGE_NAME="${IMAGE_NAME}"
+                            export ANSIBLE_SSH_HOST="${ANSIBLE_SSH_HOST}"
+                            export ANSIBLE_SSH_USER="${ANSIBLE_SSH_USER}"
                             ./scripts/run-ansible.sh deploy.yml \
                               -e "image_tag=${IMAGE_TAG}" \
                               -e "registry=${REGISTRY}" \
@@ -81,7 +92,9 @@ pipeline {
             node('built-in') {
                 checkout scm
                 sh '''
-                    chmod +x scripts/run-ansible.sh
+                    chmod +x scripts/*.sh
+                    export ANSIBLE_SSH_HOST="${ANSIBLE_SSH_HOST}"
+                    export ANSIBLE_SSH_USER="${ANSIBLE_SSH_USER}"
                     ./scripts/run-ansible.sh destroy-agent.yml || true
                 '''
             }
