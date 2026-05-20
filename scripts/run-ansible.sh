@@ -68,7 +68,7 @@ run_via_ssh() {
     IMAGE_TAG="${IMAGE_TAG:-}" \
     REGISTRY="${REGISTRY:-}" \
     IMAGE_NAME="${IMAGE_NAME:-}" \
-    JENKINS_URL="${JENKINS_URL:-http://jenkins:8080}" \
+    JENKINS_AGENT_URL="${JENKINS_AGENT_URL:-http://jenkins:8080}" \
     JENKINS_AGENT_NAME="${JENKINS_AGENT_NAME:-dynamic-agent}" \
     bash -s <<REMOTE
 set -euo pipefail

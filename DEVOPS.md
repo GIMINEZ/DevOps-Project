@@ -62,12 +62,20 @@ export SSH_HOST=172.17.0.1
 sudo bash scripts/setup-jenkins-ssh.sh
 ```
 
-### 1. Credential secret agent
+### 1. Secret agent JNLP (obligatoire si offline)
 
-1. **Manage Jenkins** → **Credentials** → **System** → **Global**
-2. **Add Credentials** → Kind: **Secret text**
-3. ID : `jenkins-agent-secret`
-4. Secret : copier depuis **Manage Jenkins** → **Nodes** → `dynamic-agent` → **Show secret**
+1. **Manage Jenkins** → **Nodes** → `dynamic-agent` → **Configure**
+2. Cliquer **Show secret** et copier la valeur
+3. Dans le job Pipeline → **Environment** → variable :
+   - Name: `JENKINS_AGENT_SECRET`
+   - Value: *(coller le secret)*
+
+> Si l'agent reste **offline**, le secret du job ne correspond plus à celui du nœud Jenkins.
+
+### 1b. Credential secret (optionnel)
+
+1. **Manage Jenkins** → **Credentials** → **Secret text** id: `jenkins-agent-secret`
+2. Ou supprimer `JENKINS_URL=http://localhost:8081/` du job (conflit avec l'API interne)
 
 ### 2. Job Pipeline
 

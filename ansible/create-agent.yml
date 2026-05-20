@@ -30,13 +30,7 @@
           - /var/run/docker.sock:/var/run/docker.sock
         groups:
           - docker
-        command: >
-          bash -c "
-          curl -fsSL -o agent.jar {{ jenkins_url }}/jnlpJars/agent.jar &&
-          java -jar agent.jar
-          -url {{ jenkins_url }}/
-          -secret {{ jenkins_agent_secret }}
-          -name {{ jenkins_agent_name }}
-          -webSocket
-          -workDir {{ jenkins_workdir }}
-          "
+        command: >-
+          bash -c "curl -fsSL -o /tmp/agent.jar {{ jenkins_url }}/jnlpJars/agent.jar &&
+          exec java -jar /tmp/agent.jar -url {{ jenkins_url }}/ -secret {{ jenkins_agent_secret }}
+          -name {{ jenkins_agent_name }} -webSocket -workDir {{ jenkins_workdir }}"
