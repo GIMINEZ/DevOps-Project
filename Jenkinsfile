@@ -35,6 +35,8 @@ pipeline {
                 sh '''
                     export JENKINS_API_URL="${JENKINS_API_URL}"
                     export JENKINS_AGENT_NAME="${JENKINS_AGENT_NAME}"
+                    export ANSIBLE_SSH_HOST="${ANSIBLE_SSH_HOST}"
+                    export ANSIBLE_SSH_USER="${ANSIBLE_SSH_USER}"
                     ./scripts/wait-for-agent.sh
                 '''
             }
