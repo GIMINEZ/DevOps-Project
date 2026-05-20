@@ -1,0 +1,15 @@
+# Jenkins
+jenkins_url: "http://jenkins:8080"
+jenkins_agent_name: dynamic-agent
+jenkins_agent_image: my-jenkins-agent
+jenkins_network: jenkins-net
+jenkins_workdir: /home/jenkins
+
+# Registry & application
+registry: "localhost:5000"
+image_name: task-manager
+app_name: task-manager-app
+app_port: 8080
+
+# Secret JNLP — à surcharger via -e ou credential Jenkins (ne pas committer en prod)
+jenkins_agent_secret: "{{ lookup('env', 'JENKINS_AGENT_SECRET') | default('a5a0e3edd653bfab20ec5c1ec8baa16dc94b34a962918c33ce6f439f9cbbdfd6', true) }}"

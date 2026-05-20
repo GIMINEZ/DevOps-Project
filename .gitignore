@@ -16,5 +16,6 @@ dist/
 build/
 *.egg-info/
 .DS_Store
+ansible/collections/
 .idea/
 .vscode/

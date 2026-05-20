@@ -1,0 +1,11 @@
+---
+- name: Remove Jenkins dynamic agent
+  hosts: local
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Stop and remove dynamic agent container
+      community.docker.docker_container:
+        name: "{{ jenkins_agent_name }}"
+        state: absent

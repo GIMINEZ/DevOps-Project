@@ -1,0 +1,42 @@
+---
+- name: Provision Jenkins dynamic agent
+  hosts: local
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Ensure Jenkins Docker network exists
+      community.docker.docker_network:
+        name: "{{ jenkins_network }}"
+        state: present
+
+    - name: Remove existing dynamic agent container (if any)
+      community.docker.docker_container:
+        name: "{{ jenkins_agent_name }}"
+        state: absent
+      ignore_errors: true
+
+    - name: Create Jenkins dynamic agent container
+      community.docker.docker_container:
+        name: "{{ jenkins_agent_name }}"
+        image: "{{ jenkins_agent_image }}"
+        state: started
+        recreate: true
+        privileged: true
+        user: root
+        networks:
+          - name: "{{ jenkins_network }}"
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+        groups:
+          - docker
+        command: >
+          bash -c "
+          curl -fsSL -o agent.jar {{ jenkins_url }}/jnlpJars/agent.jar &&
+          java -jar agent.jar
+          -url {{ jenkins_url }}/
+          -secret {{ jenkins_agent_secret }}
+          -name {{ jenkins_agent_name }}
+          -webSocket
+          -workDir {{ jenkins_workdir }}
+          "

@@ -1,0 +1,46 @@
+---
+- name: Deploy Task Manager application
+  hosts: local
+  become: true
+  gather_facts: false
+
+  vars:
+    deploy_image: "{{ registry }}/{{ image_name }}:{{ image_tag }}"
+
+  tasks:
+    - name: Pull application image from registry
+      community.docker.docker_image:
+        name: "{{ deploy_image }}"
+        source: pull
+        force_source: true
+
+    - name: Remove previous application container
+      community.docker.docker_container:
+        name: "{{ app_name }}"
+        state: absent
+      ignore_errors: true
+
+    - name: Run Task Manager container
+      community.docker.docker_container:
+        name: "{{ app_name }}"
+        image: "{{ deploy_image }}"
+        state: started
+        recreate: true
+        restart_policy: unless-stopped
+        ports:
+          - "{{ app_port }}:5000"
+        networks:
+          - name: "{{ jenkins_network }}"
+
+    - name: Wait for application health endpoint
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ app_port }}/health"
+        status_code: 200
+      register: health_check
+      retries: 15
+      delay: 3
+      until: health_check.status == 200
+
+    - name: Deployment summary
+      ansible.builtin.debug:
+        msg: "Task Manager deployed → http://localhost:{{ app_port }}"
