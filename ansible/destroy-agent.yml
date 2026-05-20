@@ -1,7 +1,7 @@
 ---
 - name: Remove Jenkins dynamic agent
   hosts: local
-  become: true
+  become: false
   gather_facts: false
 
   tasks:

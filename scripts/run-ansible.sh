@@ -76,34 +76,33 @@ REMOTE_DIR="${remote_dir}"
 PLAYBOOK="${PLAYBOOK}"
 EXTRA_ARGS="${extra_quoted}"
 
-if command -v ansible-playbook >/dev/null 2>&1; then
-  ansible-galaxy collection install -r "\${REMOTE_DIR}/requirements.yml" \
-    -p "\${REMOTE_DIR}/collections" --force 2>/dev/null || true
-  ANSIBLE_COLLECTIONS_PATH="\${REMOTE_DIR}/collections" \
-  ansible-playbook -i "\${REMOTE_DIR}/inventory.ini" "\${REMOTE_DIR}/\${PLAYBOOK}" \${EXTRA_ARGS}
-  exit 0
-fi
-
+# Docker CLI en priorité (user ansible sans sudo)
 if command -v docker >/dev/null 2>&1; then
   case "\${PLAYBOOK}" in
     create-agent.yml)
       chmod +x "\${REMOTE_DIR}/docker-agent-provision.sh"
-      JENKINS_AGENT_SECRET="\${JENKINS_AGENT_SECRET}" bash "\${REMOTE_DIR}/docker-agent-provision.sh"
+      bash "\${REMOTE_DIR}/docker-agent-provision.sh"
+      exit 0
       ;;
     destroy-agent.yml)
       chmod +x "\${REMOTE_DIR}/docker-agent-destroy.sh"
       bash "\${REMOTE_DIR}/docker-agent-destroy.sh"
+      exit 0
       ;;
     deploy.yml)
       chmod +x "\${REMOTE_DIR}/docker-app-deploy.sh"
-      IMAGE_TAG="\${IMAGE_TAG}" REGISTRY="\${REGISTRY}" IMAGE_NAME="\${IMAGE_NAME}" \
-        bash "\${REMOTE_DIR}/docker-app-deploy.sh"
-      ;;
-    *)
-      echo "Playbook inconnu pour fallback docker: \${PLAYBOOK}" >&2
-      exit 1
+      bash "\${REMOTE_DIR}/docker-app-deploy.sh"
+      exit 0
       ;;
   esac
+fi
+
+if command -v ansible-playbook >/dev/null 2>&1; then
+  ansible-galaxy collection install -r "\${REMOTE_DIR}/requirements.yml" \
+    -p "\${REMOTE_DIR}/collections" --force 2>/dev/null || true
+  ANSIBLE_COLLECTIONS_PATH="\${REMOTE_DIR}/collections" \
+  ansible-playbook -i "\${REMOTE_DIR}/inventory.ini" "\${REMOTE_DIR}/\${PLAYBOOK}" \${EXTRA_ARGS} \
+    --extra-vars "ansible_become=false"
   exit 0
 fi
 

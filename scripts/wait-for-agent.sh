@@ -2,7 +2,7 @@
 # Attend que l'agent Jenkins dynamic-agent soit en ligne.
 set -euo pipefail
 
-JENKINS_URL="${JENKINS_URL:-http://localhost:8081}"
+JENKINS_URL="${JENKINS_URL:-http://127.0.0.1:8080}"
 AGENT_NAME="${JENKINS_AGENT_NAME:-dynamic-agent}"
 MAX_ATTEMPTS="${MAX_ATTEMPTS:-60}"
 SLEEP_SEC="${SLEEP_SEC:-5}"

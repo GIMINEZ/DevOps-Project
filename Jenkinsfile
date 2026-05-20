@@ -29,7 +29,11 @@ pipeline {
                     ./scripts/run-ansible.sh create-agent.yml \
                       -e "jenkins_agent_secret=${JENKINS_AGENT_SECRET}"
                 '''
-                sh './scripts/wait-for-agent.sh'
+                sh '''
+                    export JENKINS_URL="${JENKINS_URL}"
+                    export JENKINS_AGENT_NAME="${JENKINS_AGENT_NAME}"
+                    ./scripts/wait-for-agent.sh
+                '''
             }
         }
 

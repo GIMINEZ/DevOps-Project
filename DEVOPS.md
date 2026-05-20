@@ -28,7 +28,16 @@ Jenkins post always ──► Ansible destroy-agent.yml
 
 ## Configuration Jenkins (une fois)
 
-### 0. SSH Jenkins → hôte Ansible (obligatoire)
+### 0. User ansible dans le groupe docker
+
+```bash
+sudo usermod -aG docker ansible
+# se déconnecter/reconnecter ou: newgrp docker
+```
+
+Les playbooks n'utilisent plus `sudo` (`become: false`). Docker CLI est utilisé en priorité via SSH.
+
+### 0b. SSH Jenkins → hôte Ansible (obligatoire)
 
 Jenkins tourne **dans un conteneur** sans `ansible-playbook`. Les playbooks s'exécutent sur l'hôte via l'utilisateur `ansible` en SSH.
 
