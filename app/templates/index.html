@@ -468,6 +468,67 @@
 
     .toast.show { transform: translateY(0); opacity: 1; }
     .toast.error { background: var(--danger); }
+
+    .category-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .category-section {
+      margin-bottom: 1.75rem;
+    }
+
+    .category-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--bg-accent);
+    }
+
+    .category-header h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .category-count {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .badge.category {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .btn-outline {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+    .project-banner {
+      background: linear-gradient(135deg, var(--primary-light) 0%, #f0fdf4 100%);
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+    }
+
+    .project-banner strong { color: var(--text); }
   </style>
 </head>
 <body>
@@ -483,7 +544,7 @@
             </div>
             <div>
               <h1>TaskFlow</h1>
-              <p class="subtitle">Gérez vos tâches DevOps en toute simplicité</p>
+              <p class="subtitle">Division des tâches — Projet DevOps Task Manager (IRT43)</p>
             </div>
           </div>
         </div>
@@ -510,6 +571,19 @@
 
           <label for="description">Description</label>
           <textarea id="description" name="description" placeholder="Décrivez la tâche, les étapes, les livrables…"></textarea>
+
+          <label for="category">Division / catégorie</label>
+          <select id="category" name="category">
+            <option value="Général">Général</option>
+            <option value="Application Flask">Application Flask</option>
+            <option value="Tests & Qualité">Tests & Qualité</option>
+            <option value="Docker & Registry">Docker & Registry</option>
+            <option value="Jenkins & CI/CD">Jenkins & CI/CD</option>
+            <option value="Ansible & Provisioning">Ansible & Provisioning</option>
+            <option value="Déploiement">Déploiement</option>
+            <option value="Documentation">Documentation</option>
+            <option value="Configuration">Configuration</option>
+          </select>
 
           <div class="row">
             <div>
@@ -540,8 +614,18 @@
       <div class="card">
         <div class="card-header">
           <div class="card-icon list">📋</div>
-          <h2>Mes tâches</h2>
+          <h2>Tâches du projet</h2>
         </div>
+
+        <div class="project-banner">
+          <strong>37 livrables</strong> répartis en 8 divisions : Flask, Tests, Docker, Jenkins, Ansible, Déploiement, Documentation et Configuration.
+        </div>
+
+        <button type="button" class="btn btn-outline" onclick="reloadProjectTasks()">
+          ↻ Recharger les tâches du projet DevOps
+        </button>
+
+        <div class="category-filters" id="category-filters"></div>
 
         <div class="filters">
           <button type="button" class="filter-btn active" data-filter="all">Toutes</button>
@@ -562,8 +646,20 @@
   <script>
     const STATUS_LABELS = { todo: "À faire", in_progress: "En cours", done: "Terminé" };
     const PRIORITY_LABELS = { low: "Basse", medium: "Moyenne", high: "Haute" };
+    const CATEGORY_ORDER = [
+      "Application Flask",
+      "Tests & Qualité",
+      "Docker & Registry",
+      "Jenkins & CI/CD",
+      "Ansible & Provisioning",
+      "Déploiement",
+      "Documentation",
+      "Configuration",
+      "Général",
+    ];
     let allTasks = [];
     let currentFilter = "all";
+    let currentCategory = "all";
 
     function showToast(msg, isError = false) {
       const t = document.getElementById("toast");
@@ -585,31 +681,14 @@
       return d.innerHTML;
     }
 
-    function renderTasks() {
-      const list = document.getElementById("task-list");
-      const tasks = currentFilter === "all"
-        ? allTasks
-        : allTasks.filter(t => t.status === currentFilter);
-
-      if (!tasks.length) {
-        const msg = currentFilter === "all"
-          ? "Créez votre première tâche pour commencer."
-          : "Aucune tâche dans cette catégorie.";
-        list.innerHTML = `
-          <li class="empty-state">
-            <div class="empty-icon">📝</div>
-            <strong>Aucune tâche</strong>
-            <p>${msg}</p>
-          </li>`;
-        return;
-      }
-
-      list.innerHTML = tasks.map(t => `
+    function taskCardHtml(t) {
+      return `
         <li class="task-item ${t.status === "done" ? "done-task" : ""}" data-id="${t.id}">
           <div>
             <div class="task-title">${escapeHtml(t.title)}</div>
             ${t.description ? `<p class="task-desc">${escapeHtml(t.description)}</p>` : ""}
             <div class="badges">
+              <span class="badge category">${escapeHtml(t.category || "Général")}</span>
               <span class="badge ${t.status}">${STATUS_LABELS[t.status] || t.status}</span>
               <span class="badge ${t.priority}">${PRIORITY_LABELS[t.priority] || t.priority}</span>
             </div>
@@ -618,6 +697,63 @@
             ${t.status !== "done" ? `<button class="btn btn-success" onclick="markDone(${t.id})">✓ Terminer</button>` : ""}
             <button class="btn btn-danger" onclick="deleteTask(${t.id})">Supprimer</button>
           </div>
+        </li>`;
+    }
+
+    function renderCategoryFilters() {
+      const cats = [...new Set(allTasks.map(t => t.category).filter(Boolean))];
+      const ordered = CATEGORY_ORDER.filter(c => cats.includes(c));
+      const extra = cats.filter(c => !CATEGORY_ORDER.includes(c));
+      const allCats = ["all", ...ordered, ...extra];
+      const el = document.getElementById("category-filters");
+      el.innerHTML = allCats.map(cat => `
+        <button type="button" class="filter-btn ${currentCategory === cat ? "active" : ""}"
+          data-cat="${cat}" onclick="setCategoryFilter('${cat}')">
+          ${cat === "all" ? "Toutes divisions" : escapeHtml(cat)}
+        </button>
+      `).join("");
+    }
+
+    function setCategoryFilter(cat) {
+      currentCategory = cat;
+      renderCategoryFilters();
+      renderTasks();
+    }
+
+    function renderTasks() {
+      const list = document.getElementById("task-list");
+      let tasks = allTasks;
+      if (currentFilter !== "all") tasks = tasks.filter(t => t.status === currentFilter);
+      if (currentCategory !== "all") tasks = tasks.filter(t => t.category === currentCategory);
+
+      if (!tasks.length) {
+        list.innerHTML = `
+          <li class="empty-state">
+            <div class="empty-icon">📝</div>
+            <strong>Aucune tâche</strong>
+            <p>Changez les filtres ou rechargez les tâches du projet.</p>
+          </li>`;
+        return;
+      }
+
+      const groups = {};
+      tasks.forEach(t => {
+        const cat = t.category || "Général";
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push(t);
+      });
+
+      const order = [...CATEGORY_ORDER.filter(c => groups[c]), ...Object.keys(groups).filter(c => !CATEGORY_ORDER.includes(c))];
+
+      list.innerHTML = order.map(cat => `
+        <li class="category-section">
+          <div class="category-header">
+            <h3>${escapeHtml(cat)}</h3>
+            <span class="category-count">${groups[cat].length} tâche(s) · ${groups[cat].filter(t => t.status === "done").length} terminée(s)</span>
+          </div>
+          <ul class="task-list" style="list-style:none;padding:0;margin:0;">
+            ${groups[cat].map(taskCardHtml).join("")}
+          </ul>
         </li>
       `).join("");
     }
@@ -626,7 +762,20 @@
       const res = await fetch("/api/tasks");
       allTasks = await res.json();
       updateStats(allTasks);
+      renderCategoryFilters();
       renderTasks();
+    }
+
+    async function reloadProjectTasks() {
+      if (!confirm("Recharger les 37 tâches du projet DevOps ? (remplace les tâches projet existantes)")) return;
+      const res = await fetch("/api/seed-project?force=1", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message || "Tâches projet chargées");
+        loadTasks();
+      } else {
+        showToast("Erreur chargement", true);
+      }
     }
 
     document.querySelectorAll(".filter-btn").forEach(btn => {
@@ -649,6 +798,7 @@
           description: form.description.value,
           status: form.status.value,
           priority: form.priority.value,
+          category: form.category.value,
         }),
       });
       if (res.ok) {
